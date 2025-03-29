@@ -30,7 +30,13 @@ export default function Home() {
               <Link href="/incidents" className="text-blue-600 hover:underline">
                 View Incidents
               </Link>
-              <p className="text-sm text-gray-600">See all reported incidents</p>
+              <p className="text-sm text-gray-600">See all reported incidents in a table</p>
+            </li>
+            <li>
+              <Link href="/map-view" className="text-blue-600 hover:underline">
+                Map View
+              </Link>
+              <p className="text-sm text-gray-600">View incidents on an interactive map</p>
             </li>
           </ul>
         </div>

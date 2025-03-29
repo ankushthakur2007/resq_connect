@@ -143,6 +143,12 @@ export default function IncidentsPage() {
       
       <div className="mt-8 text-center">
         <a 
+          href="/map-view" 
+          className="inline-block px-6 py-3 mr-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        >
+          View on Map
+        </a>
+        <a 
           href="/emergency-form" 
           className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
