@@ -168,18 +168,52 @@ export default function EmergencyForm() {
         console.log('Emergency reported successfully:', data);
         
         // Notify all subscribers (admin dashboards) via Pusher
-        if (process.env.NEXT_PUBLIC_PUSHER_APP_KEY) {
+        if (process.env.NEXT_PUBLIC_PUSHER_KEY) {
           try {
-            const channel = pusher.channel('emergencies');
-            channel.trigger('new-emergency', {
-              message: 'New emergency reported',
-              emergency: data?.[0] || formData
-            });
-            console.log('Pusher notification sent');
+            console.log('Sending Pusher notification');
+            
+            // Create channel name based on emergency type for better filtering
+            const channelName = 'emergencies';
+            const eventName = 'new-emergency';
+            
+            const channel = pusher.channel(channelName);
+            if (channel) {
+              channel.trigger(eventName, {
+                message: 'New emergency reported',
+                emergency: data?.[0] || formData,
+                timestamp: new Date().toISOString()
+              }).then(() => {
+                console.log('✅ Pusher notification sent successfully');
+              }).catch((pusherError) => {
+                console.error('❌ Pusher trigger error:', pusherError);
+              });
+            } else {
+              // If channel doesn't exist yet, try subscribing first
+              const newChannel = pusher.subscribe(channelName);
+              newChannel.bind(eventName, (data: any) => {
+                console.log('Received emergency event:', data);
+              });
+              
+              // Then try to trigger after a short delay
+              setTimeout(() => {
+                try {
+                  pusher.channel(channelName)?.trigger(eventName, {
+                    message: 'New emergency reported',
+                    emergency: data?.[0] || formData,
+                    timestamp: new Date().toISOString()
+                  });
+                  console.log('✅ Pusher notification sent (delayed)');
+                } catch (delayedError) {
+                  console.error('❌ Delayed Pusher error:', delayedError);
+                }
+              }, 500);
+            }
           } catch (pusherError) {
-            console.error('Failed to send Pusher notification:', pusherError);
+            console.error('❌ Failed to send Pusher notification:', pusherError);
             // Don't throw here as the emergency was still reported successfully
           }
+        } else {
+          console.warn('Pusher key not found - skipping real-time notification');
         }
         
         // Reset form and show success message
