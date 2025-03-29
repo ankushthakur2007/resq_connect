@@ -45,40 +45,13 @@ export default function Stats() {
   const [loading, setLoading] = useState(true)
   const [isGitHubPages, setIsGitHubPages] = useState(false)
 
-  useEffect(() => {
-    // Check if on GitHub Pages
-    if (typeof window !== 'undefined') {
-      const isGitHub = window.location.hostname.includes('github.io');
-      setIsGitHubPages(isGitHub);
-      
-      // For GitHub Pages, use sample data
-      if (isGitHub) {
-        console.log('Using sample stats for GitHub Pages demo');
-        setStats(SAMPLE_STATS);
-        setLoading(false);
-        return;
-      }
-    }
-    
-    // Regular functionality
-    fetchStats();
-    
-    // Only set up Pusher if not on GitHub Pages
-    if (!isGitHubPages) {
-      // Listen for new incidents
-      const channel = pusher.subscribe('incidents')
-      channel.bind('new', () => {
-        fetchStats()
-      })
-      
-      return () => {
-        pusher.unsubscribe('incidents')
-      }
-    }
-  }, [isGitHubPages])
-
   const fetchStats = async () => {
     try {
+      // Skip this function entirely if on GitHub Pages
+      if (isGitHubPages) {
+        return;
+      }
+      
       // Get total count
       const { count: total } = await supabase
         .from('incidents')
@@ -129,6 +102,38 @@ export default function Stats() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    // Check if on GitHub Pages
+    const checkEnvironment = () => {
+      if (typeof window !== 'undefined') {
+        const isGitHub = window.location.hostname.includes('github.io');
+        setIsGitHubPages(isGitHub);
+        
+        // For GitHub Pages, use sample data immediately
+        if (isGitHub) {
+          console.log('Using sample stats for GitHub Pages demo');
+          setStats(SAMPLE_STATS);
+          setLoading(false);
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    // If not on GitHub Pages, fetch real data
+    if (!checkEnvironment()) {
+      fetchStats();
+      
+      // Set up Pusher only if not on GitHub Pages
+      const channel = pusher.subscribe('incidents');
+      channel.bind('new', fetchStats);
+      
+      return () => {
+        pusher.unsubscribe('incidents');
+      };
+    }
+  }, []);
 
   if (loading) {
     return <div className="text-center p-8">Loading statistics...</div>
