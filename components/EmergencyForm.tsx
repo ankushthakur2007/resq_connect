@@ -146,9 +146,23 @@ export default function EmergencyForm() {
       
       try {
         console.log('Inserting emergency:', formData);
+        
+        // Create properly formatted data matching the database schema
+        const incidentData = {
+          type: formData.emergencyType, // Map emergencyType to type
+          description: formData.description,
+          lat: formData.lat,
+          lng: formData.lng,
+          status: 'pending',
+          reported_at: new Date().toISOString()
+        };
+        
+        console.log('Formatted data for database:', incidentData);
+        
+        // Insert with the correctly formatted data
         const { data, error: insertError } = await supabase
           .from('incidents')
-          .insert([formData])
+          .insert([incidentData])
           .select();
         
         if (insertError) {
