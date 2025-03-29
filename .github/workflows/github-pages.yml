@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Debug directory
+        run: pwd && ls -la
+        
       - name: Build with Next.js
         run: npm run build
         env:
@@ -33,6 +36,9 @@ jobs:
           NEXT_PUBLIC_PUSHER_KEY: ${{ secrets.NEXT_PUBLIC_PUSHER_KEY }}
           NEXT_PUBLIC_PUSHER_CLUSTER: ${{ secrets.NEXT_PUBLIC_PUSHER_CLUSTER }}
           
+      - name: Debug output directory
+        run: ls -la out
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:

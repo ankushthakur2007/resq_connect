@@ -4,8 +4,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: '/resq_connect', // Match your repo name
-  assetPrefix: '/resq_connect/', // Match your repo name with trailing slash
+  basePath: '/resq_connect',
+  assetPrefix: '/resq_connect/',
+  // Add trailingSlash for GitHub Pages compatibility
+  trailingSlash: true,
 };
 
 module.exports = nextConfig;

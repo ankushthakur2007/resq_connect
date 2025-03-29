@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "ts-node scripts/seed.ts",
-    "export": "next build && next export"
+    "export": "next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
