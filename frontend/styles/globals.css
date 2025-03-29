@@ -23,55 +23,71 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold tracking-tight font-heading;
+}
+
+h1 {
+  @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6;
+}
+
+h2 {
+  @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4;
+}
+
+h3 {
+  @apply text-xl sm:text-2xl md:text-3xl mb-3;
+}
+
+h4 {
+  @apply text-lg sm:text-xl md:text-2xl mb-2;
+}
+
+p {
+  @apply leading-relaxed;
 }
 
 /* Custom components */
 .hero-section {
-  position: relative;
-  background-image: linear-gradient(to right, rgb(30, 41, 59), rgb(51, 65, 85));
-  color: white;
-  min-height: 60vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 4rem 2rem;
-}
-
-.hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  z-index: 1;
-}
-
-.hero-section > * {
-  position: relative;
-  z-index: 2;
-  max-width: 800px;
-  margin: 0 auto;
+  @apply relative bg-gradient-to-r from-slate-800 to-slate-700 text-white min-h-[60vh] flex items-center justify-center text-center px-4 py-16 md:py-24 overflow-hidden;
+  
+  &::before {
+    @apply content-[''] absolute inset-0 bg-black/40 z-10;
+  }
+  
+  & > * {
+    @apply relative z-20 max-w-4xl mx-auto;
+  }
 }
 
 /* Button styles */
 .btn-primary {
-  @apply bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md font-medium transition-all duration-300 shadow-md hover:shadow-lg;
+  @apply bg-primary text-white hover:bg-primary-hover px-6 py-3 rounded-md font-medium transition-all duration-300 shadow-md hover:shadow-lg inline-flex items-center justify-center;
 }
 
 .btn-secondary {
-  @apply bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-md font-medium transition-all duration-300 shadow-md hover:shadow-lg;
+  @apply bg-secondary text-white hover:bg-secondary-hover px-6 py-3 rounded-md font-medium transition-all duration-300 shadow-md hover:shadow-lg inline-flex items-center justify-center;
 }
 
 .btn-outline {
-  @apply border-2 border-slate-800 text-slate-800 hover:bg-slate-800 hover:text-white px-6 py-2 rounded-md font-medium transition-all duration-300;
+  @apply border-2 border-secondary text-secondary hover:bg-secondary hover:text-white px-6 py-[10px] rounded-md font-medium transition-all duration-300 inline-flex items-center justify-center;
+}
+
+.btn-danger {
+  @apply bg-danger text-white hover:bg-danger-hover px-6 py-3 rounded-md font-medium transition-all duration-300 shadow-md hover:shadow-lg inline-flex items-center justify-center;
+}
+
+.btn-success {
+  @apply bg-success text-white hover:bg-success-hover px-6 py-3 rounded-md font-medium transition-all duration-300 shadow-md hover:shadow-lg inline-flex items-center justify-center;
 }
 
 /* Card styles */
 .card {
-  @apply bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg;
+  @apply bg-white rounded-lg shadow-card overflow-hidden transition-all duration-300 hover:shadow-hover;
 }
 
 .card-body {
@@ -82,58 +98,39 @@ body {
   @apply w-full h-48 object-cover;
 }
 
-/* Headings */
-h1, h2, h3, h4, h5, h6 {
-  @apply font-bold tracking-tight;
-}
-
-h1 {
-  @apply text-4xl md:text-5xl lg:text-6xl mb-6;
-}
-
-h2 {
-  @apply text-3xl md:text-4xl lg:text-5xl mb-4;
-}
-
-h3 {
-  @apply text-xl md:text-2xl lg:text-3xl mb-3;
-}
-
-/* Animation utilities */
-.hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-
 /* Layout utilities */
 .container {
   @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
 }
 
 .section {
-  @apply py-16 md:py-24;
+  @apply py-12 md:py-16 lg:py-24;
 }
 
 /* Form styles */
 .form-input {
-  @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent;
+  @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200;
 }
 
 .form-label {
   @apply block text-sm font-medium text-gray-700 mb-1;
 }
 
+.form-error {
+  @apply text-red-600 text-sm mt-1;
+}
+
+.form-success {
+  @apply text-green-600 text-sm mt-1;
+}
+
 /* Navigation */
 .nav-link {
-  @apply text-gray-600 hover:text-red-600 transition-colors duration-200;
+  @apply text-gray-600 hover:text-primary transition-colors duration-200;
 }
 
 .nav-link.active {
-  @apply text-red-600 font-medium;
+  @apply text-primary font-medium;
 }
 
 /* Footer */
@@ -143,7 +140,7 @@ h3 {
 
 /* Responsive utilities */
 .responsive-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
 }
 
 /* Loading states */
@@ -151,12 +148,55 @@ h3 {
   @apply animate-pulse bg-gray-200 rounded;
 }
 
-/* Error states */
-.error-message {
-  @apply text-red-600 text-sm mt-1;
+/* Animation utilities */
+.hover-lift {
+  @apply transition duration-300 ease-in-out;
+  
+  &:hover {
+    @apply transform -translate-y-1 shadow-hover;
+  }
 }
 
-/* Success states */
-.success-message {
-  @apply text-green-600 text-sm mt-1;
+/* Custom utilities */
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow-lg {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Accessibility */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Optimizations for mobile */
+@media (max-width: 640px) {
+  .btn-primary, .btn-secondary, .btn-outline, .btn-danger, .btn-success {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  .card-body {
+    @apply p-4;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full hover:bg-gray-500;
 } 
