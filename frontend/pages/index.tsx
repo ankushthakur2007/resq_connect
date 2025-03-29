@@ -8,7 +8,7 @@ export default function Home() {
       <section className="relative w-full h-[90vh] flex items-center justify-center bg-gradient-to-r from-slate-800 to-slate-600 text-white">
         <div className="absolute inset-0 z-0 opacity-40">
           <Image
-            src="/images/disaster-background.jpg"
+            src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1974&auto=format&fit=crop"
             alt="Disaster scene"
             fill
             style={{ objectFit: 'cover' }}
@@ -51,7 +51,7 @@ export default function Home() {
             <div className="md:w-1/2">
               <div className="aspect-square relative">
                 <Image
-                  src="/images/gas-mask.jpg"
+                  src="https://images.unsplash.com/photo-1584744826382-cbc74706c83d?q=80&w=2080&auto=format&fit=crop"
                   alt="Gas Mask - Emergency Response"
                   fill
                   style={{ objectFit: 'cover' }}

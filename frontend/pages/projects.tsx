@@ -7,7 +7,7 @@ export default function Projects() {
       id: 1,
       title: "Emergency Aid Distribution",
       location: "Southern California, USA",
-      image: "/images/project-1.jpg",
+      image: "https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=2070&auto=format&fit=crop",
       description: "Providing emergency supplies and assistance to communities affected by the recent wildfires in Southern California.",
       status: "Active",
       impact: "3,500+ individuals assisted"
@@ -16,7 +16,7 @@ export default function Projects() {
       id: 2,
       title: "Medical Relief Camp",
       location: "Northern Philippines",
-      image: "/images/project-2.jpg",
+      image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?q=80&w=2070&auto=format&fit=crop",
       description: "Setting up medical camps to provide healthcare to communities impacted by the typhoon season in the northern regions.",
       status: "Active",
       impact: "2,100+ patients treated"
@@ -25,7 +25,7 @@ export default function Projects() {
       id: 3,
       title: "Community Reconstruction",
       location: "Gujarat, India",
-      image: "/images/project-3.jpg",
+      image: "https://images.unsplash.com/photo-1503595855261-9418f48a991a?q=80&w=2070&auto=format&fit=crop",
       description: "Rebuilding essential infrastructure and housing for villages damaged by the recent floods in Gujarat.",
       status: "Active",
       impact: "15 villages, 450+ homes"
@@ -34,7 +34,7 @@ export default function Projects() {
       id: 4,
       title: "Earthquake Response",
       location: "Central Mexico",
-      image: "/images/project-4.jpg",
+      image: "https://images.unsplash.com/photo-1579612638375-4482e2a078aa?q=80&w=2070&auto=format&fit=crop",
       description: "Providing emergency response and coordination for areas affected by the 6.4 magnitude earthquake in central Mexico.",
       status: "Active",
       impact: "1,200+ families supported"
@@ -47,7 +47,7 @@ export default function Projects() {
       <section className="relative h-[60vh] flex items-center justify-center bg-slate-800 text-white">
         <div className="absolute inset-0 z-0 opacity-40">
           <Image
-            src="/images/projects-hero.jpg"
+            src="https://images.unsplash.com/photo-1469571486292-b53601010376?q=80&w=2070&auto=format&fit=crop"
             alt="Disaster relief projects"
             fill
             style={{ objectFit: 'cover' }}

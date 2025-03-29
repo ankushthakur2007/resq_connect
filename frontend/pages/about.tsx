@@ -7,7 +7,7 @@ export default function About() {
       <section className="relative h-[60vh] flex items-center justify-center bg-slate-800 text-white">
         <div className="absolute inset-0 z-0 opacity-40">
           <Image
-            src="/images/disaster-team.jpg"
+            src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?q=80&w=2070&auto=format&fit=crop"
             alt="Disaster response team"
             fill
             style={{ objectFit: 'cover' }}
@@ -40,7 +40,7 @@ export default function About() {
             </div>
             <div className="relative h-[400px] rounded-lg overflow-hidden shadow-xl">
               <Image
-                src="/images/mission.jpg"
+                src="https://images.unsplash.com/photo-1576267423445-b2e0074d68a4?q=80&w=2070&auto=format&fit=crop"
                 alt="Our mission"
                 fill
                 style={{ objectFit: 'cover' }}
@@ -108,7 +108,7 @@ export default function About() {
             <div className="text-center">
               <div className="relative w-48 h-48 mx-auto mb-4 rounded-full overflow-hidden">
                 <Image
-                  src="/images/team-1.jpg"
+                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1974&auto=format&fit=crop"
                   alt="Team member"
                   fill
                   style={{ objectFit: 'cover' }}
@@ -126,7 +126,7 @@ export default function About() {
             <div className="text-center">
               <div className="relative w-48 h-48 mx-auto mb-4 rounded-full overflow-hidden">
                 <Image
-                  src="/images/team-2.jpg"
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1974&auto=format&fit=crop"
                   alt="Team member"
                   fill
                   style={{ objectFit: 'cover' }}
@@ -144,7 +144,7 @@ export default function About() {
             <div className="text-center">
               <div className="relative w-48 h-48 mx-auto mb-4 rounded-full overflow-hidden">
                 <Image
-                  src="/images/team-3.jpg"
+                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop"
                   alt="Team member"
                   fill
                   style={{ objectFit: 'cover' }}

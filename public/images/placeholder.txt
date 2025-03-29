@@ -1,0 +1,26 @@
+Place your images here for the ResQconnect website:
+
+Required images for the website (name these files accordingly):
+
+Homepage:
+1. disaster-background.jpg - Main hero image showing a disaster scene
+2. gas-mask.jpg - Emergency responder with gas mask
+3. mission.jpg - Image representing the organization's mission
+
+About page:
+4. disaster-team.jpg - Team responding to a disaster
+5. team-1.jpg - Team member portrait (Sarah Johnson)
+6. team-2.jpg - Team member portrait (Michael Rodriguez)
+7. team-3.jpg - Team member portrait (Aisha Patel)
+
+Projects page:
+8. projects-hero.jpg - Hero image for projects section
+9. project-1.jpg - Emergency Aid Distribution project image
+10. project-2.jpg - Medical Relief Camp project image
+11. project-3.jpg - Community Reconstruction project image
+12. project-4.jpg - Earthquake Response project image
+
+For temporary placeholder images during development, you can use:
+- https://placehold.co/600x400/red/white?text=ResQconnect
+- https://picsum.photos/ for random images
+- https://placeholder.com/ for solid color placeholders
