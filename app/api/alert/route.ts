@@ -1,3 +1,9 @@
+/*
+ * This API route won't work on GitHub Pages since it's static hosting only.
+ * For a full deployment, use Vercel or another provider that supports API routes.
+ */
+
+/*
 import { NextResponse } from 'next/server'
 
 // In a real app, we would use Twilio or a similar service
@@ -44,4 +50,22 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+*/
+
+// For GitHub Pages, we'll provide a dummy implementation
+export function POST() {
+  return new Response(
+    JSON.stringify({ 
+      success: false,
+      message: 'API routes are not supported on GitHub Pages static hosting',
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 } 

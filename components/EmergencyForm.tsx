@@ -14,10 +14,29 @@ type FormData = {
 export default function EmergencyForm() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>()
   const [submitting, setSubmitting] = useState(false)
+  const [isGitHubPages, setIsGitHubPages] = useState(false)
+  
+  // Check if running on GitHub Pages (client-side only)
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      const isGitHub = window.location.hostname.includes('github.io');
+      setIsGitHubPages(isGitHub);
+    }
+  });
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true)
     try {
+      if (isGitHubPages) {
+        // On GitHub Pages, just show a demo message
+        console.log('Demo mode: GitHub Pages deployment');
+        console.log('Would have submitted:', data);
+        
+        alert('This is a demo on GitHub Pages. In a full deployment, this would save to the database.');
+        reset();
+        return;
+      }
+      
       const { data: incident, error } = await supabase
         .from('incidents')
         .insert([{ 
