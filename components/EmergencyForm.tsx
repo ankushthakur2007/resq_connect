@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { supabase } from '@/lib/supabase'
+import { supabase, checkSupabaseConnection } from '@/lib/supabase'
 import { pusher } from '@/lib/pusher'
 
 type FormData = {
@@ -11,12 +11,68 @@ type FormData = {
   description: string;
 }
 
+const SuccessMessage = () => (
+  <div className="bg-green-50 border-l-4 border-green-500 p-4 my-4 rounded shadow-sm">
+    <div className="flex">
+      <div className="flex-shrink-0">
+        <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        </svg>
+      </div>
+      <div className="ml-3">
+        <h3 className="text-sm font-medium text-green-800">Success</h3>
+        <div className="mt-2 text-sm text-green-700">
+          Emergency report submitted successfully. Thank you for your report.
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ErrorMessage = ({ details }: { details: string }) => {
+  const [showDebug, setShowDebug] = useState(false);
+  
+  return (
+    <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4 rounded shadow-sm">
+      <div className="flex justify-between">
+        <div className="flex-shrink-0">
+          <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 11-2 0 1 1 0 012 0zm-1 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <div className="ml-3 flex-grow">
+          <h3 className="text-sm font-medium text-red-800">Error</h3>
+          <div className="mt-2 text-sm text-red-700">
+            <pre className="whitespace-pre-wrap overflow-x-auto">{details}</pre>
+          </div>
+        </div>
+        <button 
+          className="text-xs text-blue-600 hover:underline ml-2 h-fit"
+          onClick={() => setShowDebug(!showDebug)}
+        >
+          {showDebug ? 'Hide Debug' : 'Show Debug'}
+        </button>
+      </div>
+      
+      {showDebug && (
+        <div className="mt-3 p-3 bg-gray-50 rounded text-xs font-mono overflow-auto">
+          <div>
+            <p>NEXT_PUBLIC_SUPABASE_URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✓ Set' : '✗ Not set'}</p>
+            <p>NEXT_PUBLIC_SUPABASE_ANON_KEY: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✓ Set' : '✗ Not set'}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function EmergencyForm() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>()
   const [submitting, setSubmitting] = useState(false)
   const [isGitHubPages, setIsGitHubPages] = useState(false)
   const [errorDetails, setErrorDetails] = useState<string | null>(null)
   const [showDebug, setShowDebug] = useState(false)
+  const [success, setSuccess] = useState(false)
   
   // Check if running on GitHub Pages
   useEffect(() => {
@@ -32,112 +88,151 @@ export default function EmergencyForm() {
     }
   }, []);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (formData: FormData) => {
     setSubmitting(true);
-    setErrorDetails(null); // Clear previous errors
-    
-    // Always log the form data for debugging
-    console.log('Form data submitted:', data);
+    setErrorDetails('');
     
     try {
-      // For GitHub Pages: show demo message instead of trying to save to Supabase
-      if (isGitHubPages || !supabase) {
-        console.log('Demo mode active - not attempting to save to database');
-        
-        // Simulate successful submission
-        setTimeout(() => {
-          reset();
-          alert('DEMO MODE: This is a static demo. In a full deployment, this would save your emergency report to the database.');
-          setSubmitting(false);
-        }, 1000);
-        
-        return;
-      }
+      // Add debug information and validation
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
       
-      // Extra check to ensure Supabase URL and key are actually set
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your_supabase_url_here') {
-        console.log('Supabase credentials not properly configured - using demo mode');
-        setErrorDetails('Supabase credentials are missing or invalid');
-        // Treat as GitHub Pages / demo mode
-        setTimeout(() => {
-          reset();
-          alert('DEMO MODE: Supabase configuration missing. This would normally save your emergency report to a database.');
-          setSubmitting(false);
-        }, 1000);
-        return;
+      if (!supabaseUrl || !supabaseKey) {
+        const missingVars = [];
+        if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+        if (!supabaseKey) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+        
+        throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
       }
       
       console.log('Attempting to submit to Supabase:', supabaseUrl);
       
-      // Diagnostic check of Supabase connection
+      // Diagnostic check of Supabase connection using the improved function
       try {
-        const { data: healthCheck, error: healthError } = await supabase.from('incidents').select('count(*)').limit(1);
+        const connectionCheck = await checkSupabaseConnection();
         
-        if (healthError) {
-          console.error('Supabase health check failed:', healthError);
-          setErrorDetails(`Supabase connection error: ${healthError.message}`);
+        if (!connectionCheck.success) {
+          console.error('Supabase connection check failed:', connectionCheck.error);
+          setErrorDetails(`Database connection error: ${
+            connectionCheck.errorDetails || JSON.stringify(connectionCheck.error, null, 2)
+          }`);
+          
+          // If we can't connect, don't try to insert
+          throw new Error('Failed to connect to database');
         } else {
-          console.log('Supabase connection successful:', healthCheck);
+          console.log('Supabase connection successful:', connectionCheck.data);
         }
       } catch (healthCheckError) {
         console.error('Health check exception:', healthCheckError);
-        setErrorDetails(`Supabase health check exception: ${String(healthCheckError)}`);
+        setErrorDetails(`Database connection error: ${
+          healthCheckError instanceof Error ? healthCheckError.message : String(healthCheckError)
+        }`);
+        
+        // If health check throws, don't proceed with insert
+        throw healthCheckError;
       }
       
-      // Normal operation for non-GitHub Pages deployments
-      const incidentData = { 
-        type: data.emergencyType,
-        location: `POINT(${data.lng} ${data.lat})`,
-        description: data.description,
-        status: 'pending',
-        reported_at: new Date().toISOString()
-      };
-      
-      console.log('Submitting incident data:', incidentData);
-      
-      const { data: incident, error } = await supabase
-        .from('incidents')
-        .insert([incidentData])
-        .select();
-      
-      if (error) {
-        console.error('Supabase error:', error);
-        setErrorDetails(`Database error: ${error.message} (Code: ${error.code})`);
-        throw error;
-      }
-      
-      console.log('Incident successfully created:', incident);
-      
-      // Only attempt Pusher if we've successfully saved to Supabase
-      if (incident) {
-        try {
-          // Trigger real-time update
-          await pusher.trigger('incidents', 'new', incident?.[0] || {});
-        } catch (pusherError) {
-          console.error('Pusher error (non-fatal):', pusherError);
-          // Don't throw here - we still succeeded with the database save
+      try {
+        console.log('Inserting emergency:', formData);
+        const { data, error: insertError } = await supabase
+          .from('incidents')
+          .insert([formData])
+          .select();
+        
+        if (insertError) {
+          console.error('Error inserting data:', insertError);
+          
+          // Format Supabase error with full details
+          const errorDetails = {
+            message: insertError.message,
+            code: insertError.code,
+            details: insertError.details,
+            hint: insertError.hint,
+            status: insertError.status
+          };
+          
+          setErrorDetails(`Database error (${insertError.code}): ${insertError.message}\n\nDetails: ${JSON.stringify(errorDetails, null, 2)}`);
+          
+          // For specific error codes, provide more helpful guidance
+          if (insertError.code === '23505') {
+            setErrorDetails(prev => prev + "\n\nThis appears to be a duplicate record error. Try changing some values or check if this incident was already reported.");
+          } else if (insertError.code === '42P01') {
+            setErrorDetails(prev => prev + "\n\nThe incidents table doesn't exist in the database. Please check your database schema.");
+          } else if (insertError.code === '42703') {
+            setErrorDetails(prev => prev + "\n\nOne of the fields doesn't match the database schema. Please check your form fields against the database columns.");
+          }
+          
+          throw insertError;
         }
+        
+        console.log('Emergency reported successfully:', data);
+        
+        // Notify all subscribers (admin dashboards) via Pusher
+        if (process.env.NEXT_PUBLIC_PUSHER_APP_KEY) {
+          try {
+            const channel = pusher.channel('emergencies');
+            channel.trigger('new-emergency', {
+              message: 'New emergency reported',
+              emergency: data?.[0] || formData
+            });
+            console.log('Pusher notification sent');
+          } catch (pusherError) {
+            console.error('Failed to send Pusher notification:', pusherError);
+            // Don't throw here as the emergency was still reported successfully
+          }
+        }
+        
+        // Reset form and show success message
+        reset();
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 5000);
+      } catch (databaseError) {
+        console.error('Database operation error:', databaseError);
+        
+        if (databaseError && typeof databaseError === 'object') {
+          // Handle Supabase error object specifically
+          const supabaseError = databaseError as any;
+          if (supabaseError.code) {
+            setErrorDetails(`Database error ${supabaseError.code}: ${supabaseError.message || 'Unknown database error'}`);
+          } else {
+            setErrorDetails(`Database error: ${JSON.stringify(databaseError, null, 2)}`);
+          }
+        } else {
+          setErrorDetails(`Database operation failed: ${String(databaseError)}`);
+        }
+        
+        throw databaseError;
       }
-      
-      reset();
-      alert('Emergency reported successfully');
     } catch (error) {
-      // Enhanced error logging
-      console.error('Error reporting emergency:', error);
+      console.error('Form submission error:', error);
       
-      if (error instanceof Error) {
-        setErrorDetails(`Error: ${error.message}`);
-      } else {
-        setErrorDetails(`Unknown error: ${String(error)}`);
-      }
-      
-      if (isGitHubPages) {
-        alert('This is a demo version. In a production environment, you would be connected to a real database.');
-      } else {
-        alert('Failed to report emergency. Please try again or contact support if the issue persists.');
+      // If we haven't set error details yet (from specific error handlers above)
+      if (!errorDetails) {
+        if (error instanceof Error) {
+          setErrorDetails(`Error: ${error.message}`);
+        } else if (error && typeof error === 'object') {
+          try {
+            // Try to extract useful information from the error object
+            const errorObj = error as any;
+            const details = [];
+            
+            if (errorObj.code) details.push(`Code: ${errorObj.code}`);
+            if (errorObj.message) details.push(`Message: ${errorObj.message}`);
+            if (errorObj.details) details.push(`Details: ${errorObj.details}`);
+            if (errorObj.hint) details.push(`Hint: ${errorObj.hint}`);
+            if (errorObj.statusCode) details.push(`Status: ${errorObj.statusCode}`);
+            
+            if (details.length > 0) {
+              setErrorDetails(`Error information:\n${details.join('\n')}`);
+            } else {
+              setErrorDetails(`Unprocessable error object: ${JSON.stringify(error, null, 2)}`);
+            }
+          } catch (jsonError) {
+            setErrorDetails(`Error object cannot be stringified: ${String(error)}`);
+          }
+        } else {
+          setErrorDetails(`Unknown error: ${String(error)}`);
+        }
       }
     } finally {
       setSubmitting(false);
@@ -155,28 +250,9 @@ export default function EmergencyForm() {
         </div>
       )}
       
-      {errorDetails && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm">
-          <div className="flex justify-between">
-            <p className="font-medium text-red-800">❌ Error Details</p>
-            <button 
-              className="text-xs text-blue-600 hover:underline"
-              onClick={() => setShowDebug(!showDebug)}
-            >
-              {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
-            </button>
-          </div>
-          {showDebug && (
-            <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono overflow-auto">
-              {errorDetails}
-              <div className="mt-1">
-                <p>NEXT_PUBLIC_SUPABASE_URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✓ Set' : '✗ Not set'}</p>
-                <p>NEXT_PUBLIC_SUPABASE_ANON_KEY: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✓ Set' : '✗ Not set'}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {success && <SuccessMessage />}
+      
+      {errorDetails && <ErrorMessage details={errorDetails} />}
       
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
