@@ -151,8 +151,8 @@ export default function EmergencyForm() {
         const incidentData = {
           type: formData.emergencyType, // Map emergencyType to type
           description: formData.description,
-          lat: formData.lat,
-          lng: formData.lng,
+          // Use POINT format for location (PostGIS format)
+          location: `POINT(${formData.lng} ${formData.lat})`,
           status: 'pending',
           reported_at: new Date().toISOString()
         };

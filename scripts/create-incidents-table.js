@@ -73,8 +73,8 @@ async function createIncidentsTable() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         type TEXT NOT NULL,
         description TEXT,
-        lat FLOAT NOT NULL,
-        lng FLOAT NOT NULL,
+        latitude FLOAT NOT NULL,
+        longitude FLOAT NOT NULL,
         status TEXT DEFAULT 'pending',
         reported_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -83,7 +83,7 @@ async function createIncidentsTable() {
       );
       
       -- Add spatial index if PostGIS is enabled (optional)
-      -- CREATE INDEX IF NOT EXISTS incidents_location_idx ON incidents USING GIST (ST_SetSRID(ST_MakePoint(lng, lat), 4326));
+      -- CREATE INDEX IF NOT EXISTS incidents_location_idx ON incidents USING GIST (ST_SetSRID(ST_MakePoint(longitude, latitude), 4326));
       
       -- Create a function to update the updated_at timestamp
       CREATE OR REPLACE FUNCTION update_modified_column()
@@ -141,8 +141,8 @@ async function createIncidentsTable() {
         {
           type: 'TEST',
           description: 'This is a test incident created by the setup script',
-          lat: 40.7128,
-          lng: -74.0060,
+          latitude: 40.7128,
+          longitude: -74.0060,
           status: 'test'
         }
       ]);

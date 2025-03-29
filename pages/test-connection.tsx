@@ -58,8 +58,7 @@ export default function TestConnection() {
       const testData = {
         type: 'TEST', // This matches the database schema
         description: 'This is a test incident',
-        lat: 40.7128,
-        lng: -74.0060,
+        location: `POINT(-74.0060 40.7128)`, // Use the PostGIS point format
         status: 'test',
         reported_at: new Date().toISOString()
       }
