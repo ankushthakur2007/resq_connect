@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabase'
 import { pusher } from '@/lib/pusher'
@@ -16,27 +16,37 @@ export default function EmergencyForm() {
   const [submitting, setSubmitting] = useState(false)
   const [isGitHubPages, setIsGitHubPages] = useState(false)
   
-  // Check if running on GitHub Pages (client-side only)
-  useState(() => {
+  // Check if running on GitHub Pages
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const isGitHub = window.location.hostname.includes('github.io');
       setIsGitHubPages(isGitHub);
+      
+      if (isGitHub) {
+        console.log('Running on GitHub Pages - Demo mode active');
+      }
     }
-  });
+  }, []);
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true)
     try {
+      // For GitHub Pages: show demo message instead of trying to save to Supabase
       if (isGitHubPages) {
-        // On GitHub Pages, just show a demo message
         console.log('Demo mode: GitHub Pages deployment');
-        console.log('Would have submitted:', data);
+        console.log('Form data:', data);
         
-        alert('This is a demo on GitHub Pages. In a full deployment, this would save to the database.');
-        reset();
+        // Simulate successful submission
+        setTimeout(() => {
+          reset()
+          alert('DEMO MODE: This is a GitHub Pages static demo. In a full deployment, this would save your emergency report to the database. Form data logged to console.');
+          setSubmitting(false);
+        }, 1000);
+        
         return;
       }
       
+      // Normal operation for non-GitHub Pages deployments
       const { data: incident, error } = await supabase
         .from('incidents')
         .insert([{ 
@@ -66,6 +76,12 @@ export default function EmergencyForm() {
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Report Emergency</h2>
+      {isGitHubPages && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm">
+          <p className="font-medium text-yellow-800">⚠️ Demo Mode Active</p>
+          <p className="text-yellow-700">This is running on GitHub Pages as a static demo. Form submissions won't be saved to a database.</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2">Emergency Type</label>
@@ -91,6 +107,7 @@ export default function EmergencyForm() {
             <input
               type="number"
               step="0.000001"
+              defaultValue={14.5995}
               {...register('lat', { 
                 required: 'Latitude is required',
                 valueAsNumber: true
@@ -106,6 +123,7 @@ export default function EmergencyForm() {
             <input
               type="number"
               step="0.000001"
+              defaultValue={120.9842}
               {...register('lng', { 
                 required: 'Longitude is required',
                 valueAsNumber: true
@@ -124,6 +142,7 @@ export default function EmergencyForm() {
             {...register('description', { required: 'Description is required' })}
             className="w-full px-3 py-2 border rounded-md"
             rows={4}
+            placeholder="Describe the emergency situation..."
           ></textarea>
           {errors.description && (
             <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
@@ -135,7 +154,7 @@ export default function EmergencyForm() {
           disabled={submitting}
           className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:bg-gray-400"
         >
-          {submitting ? 'Submitting...' : 'Report Emergency'}
+          {submitting ? 'Submitting...' : isGitHubPages ? 'Submit (Demo)' : 'Report Emergency'}
         </button>
       </form>
     </div>

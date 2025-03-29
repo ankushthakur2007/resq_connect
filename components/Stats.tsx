@@ -13,6 +13,21 @@ type Stats = {
   byType: Record<EmergencyType, number>;
 }
 
+// Sample stats for GitHub Pages demo
+const SAMPLE_STATS: Stats = {
+  total: 42,
+  pending: 15,
+  inProgress: 18,
+  resolved: 9,
+  byType: {
+    flood: 12,
+    fire: 8,
+    earthquake: 5,
+    medical: 14,
+    other: 3
+  }
+};
+
 export default function Stats() {
   const [stats, setStats] = useState<Stats>({
     total: 0,
@@ -28,6 +43,39 @@ export default function Stats() {
     }
   })
   const [loading, setLoading] = useState(true)
+  const [isGitHubPages, setIsGitHubPages] = useState(false)
+
+  useEffect(() => {
+    // Check if on GitHub Pages
+    if (typeof window !== 'undefined') {
+      const isGitHub = window.location.hostname.includes('github.io');
+      setIsGitHubPages(isGitHub);
+      
+      // For GitHub Pages, use sample data
+      if (isGitHub) {
+        console.log('Using sample stats for GitHub Pages demo');
+        setStats(SAMPLE_STATS);
+        setLoading(false);
+        return;
+      }
+    }
+    
+    // Regular functionality
+    fetchStats();
+    
+    // Only set up Pusher if not on GitHub Pages
+    if (!isGitHubPages) {
+      // Listen for new incidents
+      const channel = pusher.subscribe('incidents')
+      channel.bind('new', () => {
+        fetchStats()
+      })
+      
+      return () => {
+        pusher.unsubscribe('incidents')
+      }
+    }
+  }, [isGitHubPages])
 
   const fetchStats = async () => {
     try {
@@ -75,24 +123,12 @@ export default function Stats() {
       })
     } catch (error) {
       console.error('Error fetching stats:', error)
+      // Fallback to sample data on error
+      setStats(SAMPLE_STATS);
     } finally {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    fetchStats()
-    
-    // Listen for new incidents
-    const channel = pusher.subscribe('incidents')
-    channel.bind('new', () => {
-      fetchStats()
-    })
-    
-    return () => {
-      pusher.unsubscribe('incidents')
-    }
-  }, [])
 
   if (loading) {
     return <div className="text-center p-8">Loading statistics...</div>
@@ -100,7 +136,14 @@ export default function Stats() {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6">Emergency Statistics</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Emergency Statistics</h2>
+        {isGitHubPages && (
+          <div className="px-3 py-1 bg-yellow-100 border border-yellow-200 rounded-md">
+            <p className="text-xs text-yellow-800">Demo Mode: Using sample data</p>
+          </div>
+        )}
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <StatCard 
