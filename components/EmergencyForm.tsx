@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase, checkSupabaseConnection } from '@/lib/supabase'
 import { pusher } from '@/lib/pusher'
+import EmergencyNotificationForm from './EmergencyNotificationForm'
 
 type FormData = {
   emergencyType: string;
@@ -19,10 +20,19 @@ const SuccessMessage = () => (
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
         </svg>
       </div>
-      <div className="ml-3">
+      <div className="ml-3 flex-grow">
         <h3 className="text-sm font-medium text-green-800">Success</h3>
         <div className="mt-2 text-sm text-green-700">
           Emergency report submitted successfully. Thank you for your report.
+        </div>
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => setShowNotificationForm(true)}
+            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Send SMS Alert
+          </button>
         </div>
       </div>
     </div>
@@ -73,6 +83,8 @@ export default function EmergencyForm() {
   const [errorDetails, setErrorDetails] = useState<string | null>(null)
   const [showDebug, setShowDebug] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [showNotificationForm, setShowNotificationForm] = useState(false)
+  const [submittedEmergency, setSubmittedEmergency] = useState<FormData | null>(null)
   
   // Check if running on GitHub Pages
   useEffect(() => {
@@ -167,6 +179,9 @@ export default function EmergencyForm() {
         
         console.log('Emergency reported successfully:', data);
         
+        // Store the submitted emergency for notifications
+        setSubmittedEmergency(formData);
+        
         // Notify all subscribers (admin dashboards) via Pusher
         if (process.env.NEXT_PUBLIC_PUSHER_KEY) {
           try {
@@ -219,7 +234,6 @@ export default function EmergencyForm() {
         // Reset form and show success message
         reset();
         setSuccess(true);
-        setTimeout(() => setSuccess(false), 5000);
       } catch (databaseError) {
         console.error('Database operation error:', databaseError);
         
@@ -287,6 +301,10 @@ export default function EmergencyForm() {
       {success && <SuccessMessage />}
       
       {errorDetails && <ErrorMessage details={errorDetails} />}
+      
+      {showNotificationForm && submittedEmergency && (
+        <EmergencyNotificationForm emergency={submittedEmergency} />
+      )}
       
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
