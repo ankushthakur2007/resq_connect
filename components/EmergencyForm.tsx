@@ -19,7 +19,9 @@ export default function EmergencyForm() {
   // Check if running on GitHub Pages
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const isGitHub = window.location.hostname.includes('github.io');
+      // Both methods to detect GitHub Pages
+      const isGitHub = window.location.hostname.includes('github.io') || 
+                      (process.env.NODE_ENV === 'production' && !window.location.hostname.includes('localhost'));
       setIsGitHubPages(isGitHub);
       
       if (isGitHub) {
@@ -29,20 +31,38 @@ export default function EmergencyForm() {
   }, []);
 
   const onSubmit = async (data: FormData) => {
-    setSubmitting(true)
+    setSubmitting(true);
+    
+    // Always log the form data for debugging
+    console.log('Form data submitted:', data);
+    
     try {
       // For GitHub Pages: show demo message instead of trying to save to Supabase
-      if (isGitHubPages) {
-        console.log('Demo mode: GitHub Pages deployment');
-        console.log('Form data:', data);
+      if (isGitHubPages || !supabase) {
+        console.log('Demo mode active - not attempting to save to database');
         
         // Simulate successful submission
         setTimeout(() => {
-          reset()
-          alert('DEMO MODE: This is a GitHub Pages static demo. In a full deployment, this would save your emergency report to the database. Form data logged to console.');
+          reset();
+          alert('DEMO MODE: This is a static demo. In a full deployment, this would save your emergency report to the database.');
           setSubmitting(false);
         }, 1000);
         
+        return;
+      }
+      
+      // Extra check to ensure Supabase URL and key are actually set
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your_supabase_url_here') {
+        console.log('Supabase credentials not properly configured - using demo mode');
+        // Treat as GitHub Pages / demo mode
+        setTimeout(() => {
+          reset();
+          alert('DEMO MODE: Supabase configuration missing. This would normally save your emergency report to a database.');
+          setSubmitting(false);
+        }, 1000);
         return;
       }
       
@@ -56,20 +76,39 @@ export default function EmergencyForm() {
           status: 'pending',
           reported_at: new Date().toISOString()
         }])
-        .select()
+        .select();
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
-      // Trigger real-time update
-      await pusher.trigger('incidents', 'new', incident?.[0] || {})
+      console.log('Incident successfully created:', incident);
       
-      reset()
-      alert('Emergency reported successfully')
+      // Only attempt Pusher if we've successfully saved to Supabase
+      if (incident) {
+        try {
+          // Trigger real-time update
+          await pusher.trigger('incidents', 'new', incident?.[0] || {});
+        } catch (pusherError) {
+          console.error('Pusher error (non-fatal):', pusherError);
+          // Don't throw here - we still succeeded with the database save
+        }
+      }
+      
+      reset();
+      alert('Emergency reported successfully');
     } catch (error) {
-      console.error('Error reporting emergency:', error)
-      alert('Failed to report emergency')
+      // Enhanced error logging
+      console.error('Error reporting emergency:', error);
+      
+      if (isGitHubPages) {
+        alert('This is a demo version. In a production environment, you would be connected to a real database.');
+      } else {
+        alert('Failed to report emergency. Please try again or contact support if the issue persists.');
+      }
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -79,7 +118,7 @@ export default function EmergencyForm() {
       {isGitHubPages && (
         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm">
           <p className="font-medium text-yellow-800">⚠️ Demo Mode Active</p>
-          <p className="text-yellow-700">This is running on GitHub Pages as a static demo. Form submissions won't be saved to a database.</p>
+          <p className="text-yellow-700">This is running as a static demo. Form submissions won't be saved to a database.</p>
         </div>
       )}
       <form onSubmit={handleSubmit(onSubmit)}>
