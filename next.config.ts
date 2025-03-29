@@ -1,11 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Comment out static export to enable API routes and middleware
+  // output: 'export',
   images: {
     unoptimized: true,
   },
-  basePath: '/resq_connect',
-  assetPrefix: '/resq_connect/',
+  // Make basePath conditional based on NODE_ENV
+  basePath: process.env.NODE_ENV === 'production' ? '/resq_connect' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/resq_connect/' : '',
   // Add trailingSlash for GitHub Pages compatibility
   trailingSlash: true,
 };

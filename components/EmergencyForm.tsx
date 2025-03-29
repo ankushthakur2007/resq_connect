@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { supabase, checkSupabaseConnection } from '@/lib/supabase'
+import { supabase, checkSupabaseConnection, insertIncidentBypassRLS } from '@/lib/supabase'
 import { pusher } from '@/lib/pusher'
 import EmergencyNotificationForm from './EmergencyNotificationForm'
+import { useRouter } from 'next/navigation'
 
 type FormData = {
   emergencyType: string;
@@ -41,6 +42,10 @@ const SuccessMessage = () => (
 
 const ErrorMessage = ({ details }: { details: string }) => {
   const [showDebug, setShowDebug] = useState(false);
+  const router = useRouter();
+  const isRlsError = details.includes('row-level security') || 
+                    details.includes('42501') || 
+                    details.includes('Database permission error');
   
   return (
     <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4 rounded shadow-sm">
@@ -55,6 +60,20 @@ const ErrorMessage = ({ details }: { details: string }) => {
           <div className="mt-2 text-sm text-red-700">
             <pre className="whitespace-pre-wrap overflow-x-auto">{details}</pre>
           </div>
+          
+          {isRlsError && (
+            <div className="mt-3 flex items-center">
+              <button
+                onClick={() => router.push('/supabase-setup')}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                View Setup Guide
+              </button>
+              <span className="ml-2 text-sm text-gray-500">
+                Click to learn how to fix this database permission issue
+              </span>
+            </div>
+          )}
         </div>
         <button 
           className="text-xs text-blue-600 hover:underline ml-2 h-fit"
@@ -85,6 +104,7 @@ export default function EmergencyForm() {
   const [success, setSuccess] = useState(false)
   const [showNotificationForm, setShowNotificationForm] = useState(false)
   const [submittedEmergency, setSubmittedEmergency] = useState<FormData | null>(null)
+  const router = useRouter()
   
   // Check if running on GitHub Pages
   useEffect(() => {
@@ -159,95 +179,110 @@ export default function EmergencyForm() {
         
         console.log('Formatted data for database:', incidentData);
         
-        // Insert with the correctly formatted data
-        const { data, error: insertError } = await supabase
-          .from('incidents')
-          .insert([incidentData])
-          .select();
-        
-        if (insertError) {
-          console.error('Error inserting data:', insertError);
+        // Try multiple approaches to insert the data
+        try {
+          // First try using the API endpoint (preferred approach)
+          const response = await fetch('/api/insert-incident', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(incidentData),
+          });
           
-          // Format Supabase error with full details
-          const errorDetails = {
-            message: insertError.message,
-            code: insertError.code,
-            details: insertError.details,
-            hint: insertError.hint,
-            status: insertError.status
-          };
+          const result = await response.json();
           
-          setErrorDetails(`Database error (${insertError.code}): ${insertError.message}\n\nDetails: ${JSON.stringify(errorDetails, null, 2)}`);
-          
-          // For specific error codes, provide more helpful guidance
-          if (insertError.code === '23505') {
-            setErrorDetails(prev => prev + "\n\nThis appears to be a duplicate record error. Try changing some values or check if this incident was already reported.");
-          } else if (insertError.code === '42P01') {
-            setErrorDetails(prev => prev + "\n\nThe incidents table doesn't exist in the database. Please check your database schema.");
-          } else if (insertError.code === '42703') {
-            setErrorDetails(prev => prev + "\n\nOne of the fields doesn't match the database schema. Please check your form fields against the database columns.");
+          if (!response.ok) {
+            console.error('API insert failed:', result);
+            throw new Error(result.error || 'Failed to insert via API');
           }
           
-          throw insertError;
-        }
-        
-        console.log('Emergency reported successfully:', data);
-        
-        // Store the submitted emergency for notifications
-        setSubmittedEmergency(formData);
-        
-        // Notify all subscribers (admin dashboards) via Pusher
-        if (process.env.NEXT_PUBLIC_PUSHER_KEY) {
-          try {
-            console.log('Sending Pusher notification');
-            
-            // Create channel name based on emergency type for better filtering
-            const channelName = 'emergencies';
-            const eventName = 'new-emergency';
-            
-            const channel = pusher.channel(channelName);
-            if (channel) {
-              channel.trigger(eventName, {
-                message: 'New emergency reported',
-                emergency: data?.[0] || formData,
-                timestamp: new Date().toISOString()
-              }).then(() => {
-                console.log('✅ Pusher notification sent successfully');
-              }).catch((pusherError) => {
-                console.error('❌ Pusher trigger error:', pusherError);
-              });
-            } else {
-              // If channel doesn't exist yet, try subscribing first
-              const newChannel = pusher.subscribe(channelName);
-              newChannel.bind(eventName, (data: any) => {
-                console.log('Received emergency event:', data);
-              });
+          console.log('Successfully inserted via API:', result);
+          
+          // Use the returned data
+          const data = result.data;
+          
+          // Continue with success handling
+          console.log('Emergency reported successfully:', data);
+          
+          // Store the submitted emergency for notifications
+          setSubmittedEmergency(formData);
+          
+          // Notify all subscribers (admin dashboards) via Pusher
+          if (process.env.NEXT_PUBLIC_PUSHER_KEY) {
+            try {
+              console.log('Sending Pusher notification');
               
-              // Then try to trigger after a short delay
-              setTimeout(() => {
-                try {
-                  pusher.channel(channelName)?.trigger(eventName, {
-                    message: 'New emergency reported',
-                    emergency: data?.[0] || formData,
-                    timestamp: new Date().toISOString()
-                  });
-                  console.log('✅ Pusher notification sent (delayed)');
-                } catch (delayedError) {
-                  console.error('❌ Delayed Pusher error:', delayedError);
-                }
-              }, 500);
+              // Create channel name based on emergency type for better filtering
+              const channelName = 'emergencies';
+              const eventName = 'new-emergency';
+              
+              const channel = pusher.channel(channelName);
+              if (channel) {
+                channel.trigger(eventName, {
+                  message: 'New emergency reported',
+                  emergency: data?.[0] || formData,
+                  timestamp: new Date().toISOString()
+                }).then(() => {
+                  console.log('✅ Pusher notification sent successfully');
+                }).catch((pusherError) => {
+                  console.error('❌ Pusher trigger error:', pusherError);
+                });
+              } else {
+                // If channel doesn't exist yet, try subscribing first
+                const newChannel = pusher.subscribe(channelName);
+                newChannel.bind(eventName, (data: any) => {
+                  console.log('Received emergency event:', data);
+                });
+                
+                // Then try to trigger after a short delay
+                setTimeout(() => {
+                  try {
+                    pusher.channel(channelName)?.trigger(eventName, {
+                      message: 'New emergency reported',
+                      emergency: data?.[0] || formData,
+                      timestamp: new Date().toISOString()
+                    });
+                    console.log('✅ Pusher notification sent (delayed)');
+                  } catch (delayedError) {
+                    console.error('❌ Delayed Pusher error:', delayedError);
+                  }
+                }, 500);
+              }
+            } catch (pusherError) {
+              console.error('❌ Failed to send Pusher notification:', pusherError);
+              // Don't throw here as the emergency was still reported successfully
             }
-          } catch (pusherError) {
-            console.error('❌ Failed to send Pusher notification:', pusherError);
-            // Don't throw here as the emergency was still reported successfully
+          } else {
+            console.warn('Pusher key not found - skipping real-time notification');
           }
-        } else {
-          console.warn('Pusher key not found - skipping real-time notification');
+          
+          // Reset form and show success message
+          reset();
+          setSuccess(true);
+        } catch (apiError) {
+          console.error('API insert error:', apiError);
+          const errorMessage = apiError.message || '';
+          
+          // Check if this is an RLS policy error
+          if (errorMessage.includes('row-level security') || errorMessage.includes('42501')) {
+            setErrorDetails(`Database permission error: You don't have permission to add incidents to the database. 
+            
+This is likely due to Row-Level Security (RLS) being enabled without proper policies.
+            
+Please go to the setup guide to fix this issue.`);
+            
+            // Add a button to the error message to navigate to the setup page
+            setTimeout(() => {
+              if (confirm('Would you like to view the setup guide to fix this database permission issue?')) {
+                router.push('/supabase-setup');
+              }
+            }, 1000);
+          } else {
+            setErrorDetails(`API insert error: ${apiError.message}`);
+          }
+          throw apiError;
         }
-        
-        // Reset form and show success message
-        reset();
-        setSuccess(true);
       } catch (databaseError) {
         console.error('Database operation error:', databaseError);
         
